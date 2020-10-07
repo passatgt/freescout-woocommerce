@@ -1,0 +1,22 @@
+{
+    "name": "WooCommerce",
+    "alias": "woocommerce",
+    "description": "Enrich customer data by pulling WooCommerce order information!",
+    "version": "1.0",
+    "detailsUrl": "https://freescout.net/",
+    "author": "Peter Viszt",
+    "authorUrl": "https://visztpeter.me",
+    "requiredAppVersion": "1.5.14",
+    "license": "AGPL-3.0",
+    "keywords": [],
+    "active": 0,
+    "order": 0,
+    "providers": [
+        "Modules\\WooCommerce\\Providers\\WooCommerceServiceProvider"
+    ],
+    "aliases": {},
+    "files": [
+        "start.php"
+    ],
+    "requires": []
+}
