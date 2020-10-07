@@ -33,10 +33,9 @@ class WooCommerceServiceProvider extends ServiceProvider
 					$public_key = config('woocommerce.public_key');
 					$secret_key = config('woocommerce.secret_key');
 					$domain = config('woocommerce.domain');
-					$email_address = 'info@visztpeter.me';
-					$email_address_id = preg_replace('/[^A-Za-z0-9\-]/', '', $email_address);
 					$user_locale = session('user_locale');
 					if($email_address) {
+						$email_address_id = preg_replace('/[^A-Za-z0-9\-]/', '', $email_address);
 						?>
 						<style type="text/css">
 							.wc-order {
