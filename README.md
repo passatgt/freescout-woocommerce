@@ -13,3 +13,5 @@ Check this site for a quick demo: https://passatgt.github.io/gdpr-cookie-notice/
 2. Edit the Config/config.php file to enter your WooCommerce REST API public and private key. Also the domain, like https://test.com/ (make sure it ends with a /)
 3. Enable the module in FreeScout
 4. Check out a conversation and it will automatically download the most recent orders of the customer and it will be displayed on the sidebar with a quick link to the order details page
+
+![Screenshot](screenshot.png)
