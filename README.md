@@ -3,10 +3,6 @@ FreeScout WooCommerce
 
 This is a proof-of-content solution to display WooCommerce orders on the sidebar of a FreeScout conversation related to the current customer(based on the e-mail address).
 
-##### Demo
-
-Check this site for a quick demo: https://passatgt.github.io/gdpr-cookie-notice/
-
 ##### How it works?
 
 1. Download the repo and copy it into the FreeScout's Modules folder(make sure the folder name is WooCommerce)
