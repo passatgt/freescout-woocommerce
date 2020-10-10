@@ -3,153 +3,105 @@
 namespace Modules\WooCommerce\Providers;
 
 use App\Customer;
+use App\Option;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Factory;
 
 class WooCommerceServiceProvider extends ServiceProvider
 {
 
-    /**
-     * Boot the application events.
-     *
-     * @return void
-     */
-    public function boot()
-    {
-        $this->registerConfig();
-        $this->registerViews();
-        $this->registerFactories();
-        $this->hooks();
-    }
+		/**
+		 * Boot the application events.
+		 *
+		 * @return void
+		 */
+		public function boot()
+		{
+			$this->registerConfig();
+			$this->registerViews();
+			$this->registerFactories();
+			$this->hooks();
+		}
 
-    /**
-     * Module hooks.
-     */
-    public function hooks()
-    {
-        // Run enrichment for
-        \Eventy::addAction('customer.profile_data', function($customer, $conversation) {
-					$email_address = $customer->getMainEmail();
-					$public_key = config('woocommerce.public_key');
-					$secret_key = config('woocommerce.secret_key');
-					$domain = config('woocommerce.domain');
-					$user_locale = session('user_locale');
-					if($email_address) {
-						$email_address_id = preg_replace('/[^A-Za-z0-9\-]/', '', $email_address);
-						?>
-						<style type="text/css">
-							.wc-order {
-								background: #f1f3f5;
-								border-radius: 5px;
-								padding: 10px;
-								margin: 0 0 10px 0;
-							}
+		/**
+		 * Module hooks.
+		 */
+		public function hooks()
+		{
 
-							.wc-order-info-row {
-								display: flex;
-								justify-content: space-between;
-							}
+			// Run enrichment for
+			\Eventy::addAction('conversation.after_prev_convs', function($customer, $conversation, $mailbox) {
 
-							.wc-order-info-row span {
-								text-transform: capitalize;
-							}
-						</style>
-						<script>
+				$template_vars = [
+					'customer' => $customer,
+					'conversation' => $conversation,
+					'domain' => Option::get('wc_domain', \Config::get('app.wc_domain')),
+					'locale' => session('user_locale')
+				];
+				echo view('woocommerce::orders', $template_vars);
 
-						function setWithExpiry(key, value, ttl) {
-							const now = new Date()
-							const item = {
-								value: value,
-								expiry: now.getTime() + ttl,
-							}
-							localStorage.setItem(key, JSON.stringify(item))
-						}
+			}, 10, 3);
 
-						function getWithExpiry(key) {
-							const itemStr = localStorage.getItem(key)
-							// if the item doesn't exist, return null
-							if (!itemStr) {
-								return null
-							}
-							const item = JSON.parse(itemStr)
-							const now = new Date()
-							// compare the expiry time of the item with the current time
-							if (now.getTime() > item.expiry) {
-								// If the item is expired, delete the item from storage
-								// and return null
-								localStorage.removeItem(key)
-								return null
-							}
-							return item.value
-						}
+			// Create settings menu
+			\Eventy::addFilter('settings.sections', function($sections) {
+				$sections['woocommerce'] = ['title' => __('WooCommerce'), 'icon' => 'shopping-cart', 'order' => 400];
+				return $sections;
+			}, 20, 1);
 
-						//Setup php variables
-						var domain = '<?php echo $domain; ?>';
-						var locale = '<?php echo $user_locale; ?>';
-						var email_address_id = '<?php echo $email_address_id; ?>';
+			// Setup settings fields
+			\Eventy::addFilter('settings.sections', function($params, $section) {
+				if($section == 'woocommerce') {
+					$params = [
+							'settings' => [
+									'wc_domain' => [
+											'env' => 'WC_DOMAIN',
+									],
+									'wc_public_key' => [
+											'env' => 'WC_PUBLIC_KEY',
+									],
+									'wc_private_key' => [
+											'env' => 'WC_PRIVATE_KEY',
+									]
+							],
+					];
+				}
+				return $params;
+			}, 20, 2);
 
-						//Workaround, since jQuery is loaded at the end of the page, $ is not available yet
-						setTimeout(function wait(){
-							if(!window.$) return setTimeout(wait, 100);
+			// Load saved options
+			\Eventy::addFilter('settings.section_settings', function($settings, $section) {
+				if($section == 'woocommerce') {
+					$settings = [
+						'wc_domain'   => Option::get('wc_domain', \Config::get('app.wc_domain')),
+						'wc_public_key'   => Option::get('wc_public_key', \Config::get('app.wc_public_key')),
+						'wc_private_key'   => Option::get('wc_private_key', \Config::get('app.wc_private_key')),
+					];
+				}
+				return $settings;
+			}, 20, 2);
 
-							//Check if already stored
-							var order_data = getWithExpiry('wc_customer_'+email_address_id);
+			// Display the settings page template
+			\Eventy::addFilter('settings.view', function($view, $section) {
+				if($section == 'woocommerce') {
+					$view = 'woocommerce::settings';
+				}
+				return $view;
+			}, 20, 2);
 
-							//If expired or doesn't exists, fetch new orders
-							if(!order_data) {
-								get_orders();
-							} else {
-								display_orders(order_data);
-							}
+			// Register JS files
+			\Eventy::addFilter('javascripts', function($value) {
+				array_push($value, '/modules/woocommerce/js/main.js');
+				array_push($value, '/modules/woocommerce/js/laroute.js');
+				return $value;
+			}, 20, 1);
 
-							//Fetch orders using WC rest api
-							function get_orders() {
-								$.ajax({
-									type: 'GET',
-									url: domain+'wp-json/wc/v2/orders',
-									data: {consumer_key: '<?php echo $public_key; ?>', consumer_secret: '<?php echo $secret_key; ?>', search: '<?php echo $email_address; ?>', _jsonp: 'callback'},
-									dataType: 'jsonp',
-									jsonpCallback: 'callback',
-									success: function (jsonp) {
+			// Add module's css file to the application layout
+			\Eventy::addFilter('stylesheets', function($value) {
+				array_push($value, '/modules/woocommerce/css/style.css');
+				return $value;
+			}, 20, 1);
 
-										//Cache for 1 hour
-										setWithExpiry('wc_customer_'+email_address_id, jsonp, 60*60);
-
-										//Display
-										display_orders(jsonp);
-
-									}
-								});
-							}
-
-							//Simply append data to sidebar
-							function display_orders(orders) {
-								$('.wc-orders').remove();
-								$('.customer-extra').append('<div class="wc-orders"><h4>Recent orders</h4></div>');
-
-								orders.forEach(function(order){
-									var total = new Intl.NumberFormat(locale, { style: 'currency', currency: order.currency }).format(order.total);
-									var edit_link = domain+'wp-admin/post.php?post='+order.id+'&action=edit';
-									var date = new Date(order.date_created);
-									var datetime = Intl.DateTimeFormat(locale).format(date)
-									var html = '<div class="wc-order">'+
-														 '<div class="wc-order-info-row"><a target="_blank" href="'+edit_link+'">'+order.number+'</a> <span>'+total+'</span></div>'+
-														 '<div class="wc-order-info-row"><span>'+datetime+'</span> <span>'+order.status+'</span></div>'+
-														 '</div>';
-
-									$('.wc-orders').append(html);
-								});
-							}
-
-						}, 100);
-
-						</script>
-
-					<?php
-					}
-
-        }, 10, 2);
-    }
+		}
 
     /**
      * Register the service provider.

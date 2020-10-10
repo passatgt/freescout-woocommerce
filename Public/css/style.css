@@ -1,0 +1,35 @@
+.woocommerce-orders.loading {
+	background: url('/img/loader-tiny.gif') 50% 50% no-repeat transparent;
+}
+
+ul.woocommerce-order-list {
+	min-height: 20px;
+}
+
+ul.woocommerce-order-list li {
+	border-bottom: 1px solid #dbdbdb;
+	padding: 5px 0;
+}
+
+ul.woocommerce-order-list li a {
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+ul.woocommerce-order-list li:last-child {
+	border-bottom: 0;
+}
+
+.woocommerce-order-list-row {
+	display: flex;
+	justify-content: space-between;
+}
+
+.woocommerce-order-list-row span {
+	text-transform: capitalize;
+}
+
+.woocommerce-orders.loading .woocommerce-order-list-reload,
+.woocommerce-orders.loading li {
+	display: none;
+}
